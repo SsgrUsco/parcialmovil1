@@ -1,0 +1,161 @@
+<ion-header [translucent]="true">
+  <ion-toolbar>
+    <ion-title>Control de inventario</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-modal [isOpen]="isDetailOpen" (didDismiss)="closeDetails()">
+  <ng-template>
+    <ion-header>
+      <ion-toolbar>
+        <ion-title>Detalle del producto</ion-title>
+      </ion-toolbar>
+    </ion-header>
+
+    <ion-content class="ion-padding">
+      @if (selectedItem; as item) {
+        <img
+          class="detail-image"
+          [src]="item.url"
+          [alt]="item.title"
+        />
+        <h2>{{ item.title }}</h2>
+        <p>Álbum: {{ item.albumId }}</p>
+        <p>
+          Stock actual:
+          <ion-badge [color]="getStockColor(item.stock)">{{ item.stock }} unidades</ion-badge>
+        </p>
+
+        <form (ngSubmit)="restockSelectedItem()">
+          <ion-input
+            label="Unidades para reabastecer"
+            labelPlacement="stacked"
+            type="number"
+            min="1"
+            step="1"
+            [(ngModel)]="restockQuantity"
+            name="restockQuantity"
+            required>
+          </ion-input>
+          @if (restockError) {
+            <p class="form-error" role="alert">{{ restockError }}</p>
+          }
+          <ion-button expand="block" type="submit" [disabled]="!!restockError">
+            Reabastecer inventario
+          </ion-button>
+          <ion-button expand="block" fill="clear" type="button" (click)="closeDetails()">
+            Cerrar
+          </ion-button>
+        </form>
+      }
+    </ion-content>
+  </ng-template>
+</ion-modal>
+
+<ion-content [fullscreen]="true">
+  <main class="inventory-page">
+    <section class="page-intro">
+      <h1>Inventario y almacén</h1>
+      <p>Consulta existencias, filtra productos y registra reabastecimientos.</p>
+    </section>
+
+    <ion-grid class="summary-grid">
+      <ion-row>
+        <ion-col size="12" size-md="4">
+          <ion-card>
+            <ion-card-header>
+              <ion-card-title>Productos en catálogo</ion-card-title>
+            </ion-card-header>
+            <ion-card-content>{{ items.length }}</ion-card-content>
+          </ion-card>
+        </ion-col>
+        <ion-col size="12" size-md="4">
+          <ion-card>
+            <ion-card-header>
+              <ion-card-title>Unidades en almacén</ion-card-title>
+            </ion-card-header>
+            <ion-card-content>{{ totalStock }}</ion-card-content>
+          </ion-card>
+        </ion-col>
+        <ion-col size="12" size-md="4">
+          <ion-card>
+            <ion-card-header>
+              <ion-card-title>Stock bajo (5 o menos)</ion-card-title>
+            </ion-card-header>
+            <ion-card-content>{{ lowStockCount }}</ion-card-content>
+          </ion-card>
+        </ion-col>
+      </ion-row>
+    </ion-grid>
+
+    <ion-card class="inventory-card">
+      <ion-card-header>
+        <ion-card-title>Productos</ion-card-title>
+      </ion-card-header>
+
+      <ion-searchbar
+        placeholder="Buscar por nombre"
+        aria-label="Buscar productos por nombre"
+        [(ngModel)]="searchTerm">
+      </ion-searchbar>
+
+        <div class="filter-row">
+          <ion-select
+            label="Filtrar por álbum"
+            labelPlacement="stacked"
+            interface="popover"
+            [(ngModel)]="selectedAlbum">
+            <ion-select-option value="Todos">Todos los álbumes</ion-select-option>
+            @for (album of albums; track album) {
+              <ion-select-option [value]="album">Álbum {{ album }}</ion-select-option>
+            }
+          </ion-select>
+          <p class="results-count">
+            {{ filteredItems.length }} producto(s)
+          </p>
+        </div>
+      <p class="data-note">
+        Las existencias y los reabastecimientos se guardan localmente como datos de demostración.
+      </p>
+
+      @if (isLoading) {
+        <div class="state-message" role="status">
+          <ion-spinner name="crescent"></ion-spinner>
+          <span>Cargando inventario...</span>
+        </div>
+      }
+
+      @if (!isLoading && errorMessage) {
+        <p class="state-message error-message" role="alert">{{ errorMessage }}</p>
+      }
+
+      @if (!isLoading && !errorMessage) {
+        <ion-card-content>
+          @if (filteredItems.length) {
+            <ion-list>
+              @for (item of filteredItems; track item.id) {
+                <ion-item
+                  [button]="true"
+                  detail="true"
+                  (click)="openDetails(item)">
+                  <ion-avatar slot="start">
+                    <img [src]="item.thumbnailUrl" [alt]="item.title" />
+                  </ion-avatar>
+                  <ion-label class="ion-text-wrap">
+                    <h2>{{ item.title }}</h2>
+                    <p>Álbum {{ item.albumId }} · ID {{ item.id }}</p>
+                  </ion-label>
+                  <ion-badge slot="end" [color]="getStockColor(item.stock)">
+                    {{ item.stock }} unidades
+                  </ion-badge>
+                </ion-item>
+              }
+            </ion-list>
+          } @else {
+            <p class="state-message">No hay productos que coincidan con los filtros.</p>
+          }
+        </ion-card-content>
+      }
+    </ion-card>
+  </main>
+</ion-content>

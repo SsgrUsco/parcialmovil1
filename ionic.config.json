@@ -1,0 +1,7 @@
+{
+  "name": "parcial-repaso",
+  "integrations": {
+    "capacitor": {}
+  },
+  "type": "angular"
+}
